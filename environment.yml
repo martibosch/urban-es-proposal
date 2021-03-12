@@ -19,6 +19,7 @@ dependencies:
   - ipykernel
   - descartes
   - matplotlib
+  - pandoc
   - rasterio
   - salem
   - shapely

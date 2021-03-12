@@ -18,10 +18,16 @@ make create_environment
 conda activate urban-es-proposal
 ```
 
-3. Register the IPython kernel for Jupyter
+You can now generate all the data for the plots:
 
 ```
-make register_ipykernel
+make candidate_pixels vulnerable_pop heat_mitigation
+```
+
+and compile the one-pager DOCX and PDF:
+
+```
+make one_pager_docx one_pager_pdf
 ```
 
 ## Acknowledgments
