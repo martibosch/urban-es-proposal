@@ -1,5 +1,6 @@
 .PHONY: create_environment register_ipykernel agglom_lulc reclassify \
-	candidate_pixels vulnerable_pop heat_mitigation one_pager
+	candidate_pixels vulnerable_pop heat_mitigation one_pager_docx \
+	one_pager_pdf
 
 #################################################################################
 # GLOBALS                                                                       #
@@ -172,14 +173,23 @@ heat_mitigation: $(HEAT_MITIGATION_TIF)
 ONE_PAGER_TEMPLATE_URI = https://raw.githubusercontent.com/Wandmalfarbe/pandoc-latex-template/v2.0.0/eisvogel.tex
 ONE_PAGER_TEMPLATE_TEX := $(REPORTS_DIR)/eisvogel.tex
 ONE_PAGER_MD := $(REPORTS_DIR)/one-pager.md
+ONE_PAGER_DOCX := $(REPORTS_DIR)/one-pager.docx
 ONE_PAGER_PDF := $(REPORTS_DIR)/one-pager.pdf
 
 $(ONE_PAGER_TEMPLATE_TEX): | $(REPORTS_DIR)
 	wget $(ONE_PAGER_TEMPLATE_URI) -O $@
+define MAKE_ONE_PAGER
+$(ONE_PAGER_EXT):  $(ONE_PAGER_MD) | $(ONE_PAGER_TEMPLATE_TEX)
+	pandoc $< -o $@ -f markdown --template $(ONE_PAGER_TEMPLATE_TEX)
+endef
+$(foreach ONE_PAGER_EXT, $(ONE_PAGER_DOCX), $(ONE_PAGER_PDF), \
+	$(eval $(MAKE_ONE_PAGER)))
+$(ONE_PAGER_DOCX): $(ONE_PAGER_MD) | $(ONE_PAGER_TEMPLATE_TEX)
+	pandoc $< -o $@ -f markdown --template $(ONE_PAGER_TEMPLATE_TEX)
 $(ONE_PAGER_PDF): $(ONE_PAGER_MD) | $(ONE_PAGER_TEMPLATE_TEX)
-	pandoc $< -o $@ -f markdown --template $(ONE_PAGER_TEMPLATE_TEX) \
-		-V geometry:""
-one_pager: $(ONE_PAGER_PDF)
+	pandoc $< -o $@ -f markdown --template $(ONE_PAGER_TEMPLATE_TEX)
+one_pager_docx: $(ONE_PAGER_DOCX)
+one_pager_pdf: $(ONE_PAGER_PDF)
 
 
 #################################################################################
