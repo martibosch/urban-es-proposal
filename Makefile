@@ -1,5 +1,5 @@
 .PHONY: create_environment register_ipykernel agglom_lulc reclassify \
-	candidate_pixels vulnerable_pop heat_mitigation
+	candidate_pixels vulnerable_pop heat_mitigation one_pager
 
 #################################################################################
 # GLOBALS                                                                       #
@@ -165,6 +165,21 @@ HEAT_MITIGATION_TIF := $(DATA_RAW_DIR)/heat-mitigation.tif
 $(HEAT_MITIGATION_TIF): | $(DATA_RAW_DIR)
 	wget $(HEAT_MITIGATION_URI) -O $@
 heat_mitigation: $(HEAT_MITIGATION_TIF)
+
+
+# One pager
+## variables
+ONE_PAGER_TEMPLATE_URI = https://raw.githubusercontent.com/Wandmalfarbe/pandoc-latex-template/v2.0.0/eisvogel.tex
+ONE_PAGER_TEMPLATE_TEX := $(REPORTS_DIR)/eisvogel.tex
+ONE_PAGER_MD := $(REPORTS_DIR)/one-pager.md
+ONE_PAGER_PDF := $(REPORTS_DIR)/one-pager.pdf
+
+$(ONE_PAGER_TEMPLATE_TEX): | $(REPORTS_DIR)
+	wget $(ONE_PAGER_TEMPLATE_URI) -O $@
+$(ONE_PAGER_PDF): $(ONE_PAGER_MD) | $(ONE_PAGER_TEMPLATE_TEX)
+	pandoc $< -o $@ -f markdown --template $(ONE_PAGER_TEMPLATE_TEX) \
+		-V geometry:""
+one_pager: $(ONE_PAGER_PDF)
 
 
 #################################################################################
