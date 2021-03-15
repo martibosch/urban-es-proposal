@@ -1,6 +1,6 @@
 .PHONY: create_environment register_ipykernel agglom_lulc reclassify \
 	candidate_pixels vulnerable_pop heat_mitigation one_pager_docx \
-	one_pager_pdf
+	one_pager_pdf roadmap_docx roadmap_pdf
 
 #################################################################################
 # GLOBALS                                                                       #
@@ -176,21 +176,32 @@ ONE_PAGER_MD := $(REPORTS_DIR)/one-pager.md
 ONE_PAGER_DOCX := $(REPORTS_DIR)/one-pager.docx
 ONE_PAGER_PDF := $(REPORTS_DIR)/one-pager.pdf
 
+## rules
 $(ONE_PAGER_TEMPLATE_TEX): | $(REPORTS_DIR)
 	wget $(ONE_PAGER_TEMPLATE_URI) -O $@
 define MAKE_ONE_PAGER
 $(ONE_PAGER_EXT):  $(ONE_PAGER_MD) | $(ONE_PAGER_TEMPLATE_TEX)
-	pandoc $< -o $@ -f markdown --template $(ONE_PAGER_TEMPLATE_TEX)
+	pandoc $$< -o $$@ -f markdown --template $(ONE_PAGER_TEMPLATE_TEX)
 endef
-$(foreach ONE_PAGER_EXT, $(ONE_PAGER_DOCX), $(ONE_PAGER_PDF), \
+$(foreach ONE_PAGER_EXT, $(ONE_PAGER_DOCX) $(ONE_PAGER_PDF), \
 	$(eval $(MAKE_ONE_PAGER)))
-$(ONE_PAGER_DOCX): $(ONE_PAGER_MD) | $(ONE_PAGER_TEMPLATE_TEX)
-	pandoc $< -o $@ -f markdown --template $(ONE_PAGER_TEMPLATE_TEX)
-$(ONE_PAGER_PDF): $(ONE_PAGER_MD) | $(ONE_PAGER_TEMPLATE_TEX)
-	pandoc $< -o $@ -f markdown --template $(ONE_PAGER_TEMPLATE_TEX)
 one_pager_docx: $(ONE_PAGER_DOCX)
 one_pager_pdf: $(ONE_PAGER_PDF)
 
+# Roadmap
+## variables
+ROADMAP_MD := $(REPORTS_DIR)/roadmap.md
+ROADMAP_DOCX := $(REPORTS_DIR)/roadmap.docx
+ROADMAP_PDF := $(REPORTS_DIR)/roadmap.pdf
+
+## rules
+define MAKE_ROADMAP
+$(ROADMAP_EXT):  $(ROADMAP_MD) | $(REPORTS_DIR)
+	pandoc $$< -o $$@ -f markdown
+endef
+$(foreach ROADMAP_EXT, $(ROADMAP_DOCX) $(ROADMAP_PDF), $(eval $(MAKE_ROADMAP)))
+roadmap_docx: $(ROADMAP_DOCX)
+roadmap_pdf: $(ROADMAP_PDF)
 
 #################################################################################
 # Self Documenting Commands                                                     #
