@@ -62,24 +62,26 @@ class OptionEatAll(click.Option):
 @click.command()
 @click.argument('statpop_filepath', type=click.Path(exists=True))
 @click.argument('agglom_extent_filepath', type=click.Path(exists=True))
-@click.argument('candidate_pixels_filepath', type=click.Path(exists=True))
 @click.argument('dst_filepath', type=click.Path())
 @click.option('--vulnerable-columns', cls=OptionEatAll, required=False)
-def main(statpop_filepath, agglom_extent_filepath, candidate_pixels_filepath,
-         dst_filepath, vulnerable_columns):
+@click.option('--buffer-dist', default=100, required=False)
+def main(statpop_filepath, agglom_extent_filepath, dst_filepath,
+         vulnerable_columns, buffer_dist):
     logger = logging.getLogger(__name__)
 
     gdf = gpd.read_file(agglom_extent_filepath)
     ldf = sls.read_csv(statpop_filepath,
                        x_column='E_KOORD',
                        y_column='N_KOORD').clip_by_geometry(
-                           gdf['geometry'].iloc[0], gdf.crs)
+                           gdf['geometry'].iloc[0].buffer(buffer_dist),
+                           gdf.crs)
 
     if vulnerable_columns is None:
         vulnerable_columns = VULNERABLE_COLUMNS
     ldf['vulnerable'] = ldf[vulnerable_columns].sum(axis=1)
 
     ldf.to_geotiff(dst_filepath, 'vulnerable')
+    logger.info("dumped vulnerable population raster to %s", dst_filepath)
 
 
 if __name__ == '__main__':
