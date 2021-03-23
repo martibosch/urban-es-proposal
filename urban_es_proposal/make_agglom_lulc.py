@@ -52,7 +52,7 @@ def rasterize_cadastre(cadastre_gdf, dst_res, dst_nodata, dst_dtype):
 @click.argument('cadastre_shp_filepath', type=click.Path(exists=True))
 @click.argument('agglom_extent_filepath', type=click.Path(exists=True))
 @click.argument('dst_filepath', type=click.Path())
-@click.option('--dst-res', type=int, default=5, required=False)
+@click.option('--dst-res', type=int, default=10, required=False)
 @click.option('--dst-nodata', type=int, default=255, required=False)
 @click.option('--dst-dtype', default='uint8', required=False)
 def main(cadastre_shp_filepath, agglom_extent_filepath, dst_filepath, dst_res,
