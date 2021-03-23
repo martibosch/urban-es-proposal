@@ -77,9 +77,9 @@ $(CADASTRE_DIR)/%.shp: $(CADASTRE_DIR)/%.zip $(MAKE_CADASTRE_SHP_FROM_ZIP_PY)
 	python $(MAKE_CADASTRE_SHP_FROM_ZIP_PY) $< $@ \
 		"$(CADASTRE_UNZIP_FILEPATTERN)"
 	touch $@
-$(AGGLOM_LULC): $(CADASTRE_SHP) $(AGGLOM_EXTENT_SHP) $(MAKE_AGGLOM_LULC_PY) \
+$(AGGLOM_LULC_TIF): $(CADASTRE_SHP) $(AGGLOM_EXTENT_SHP) $(MAKE_AGGLOM_LULC_PY) \
 	| $(DATA_INTERIM_DIR)
-	python $(MAKE_AGGLOM_LULC_PY) $(CADASTRE_SHP) $(AGGLOM_EXTENT_SHP)
+	python $(MAKE_AGGLOM_LULC_PY) $(CADASTRE_SHP) $(AGGLOM_EXTENT_SHP) $@
 agglom_lulc: $(AGGLOM_LULC_TIF)
 
 # Reclassify
@@ -142,6 +142,7 @@ AGGLOM_EXTENT_ZENODO_URI = \
 	https://zenodo.org/record/4311544/files/agglom-extent.zip?download=1
 AGGLOM_EXTENT_SHP := $(AGGLOM_EXTENT_DIR)/agglom-extent.shp
 VULNERABLE_POP_TIF := $(DATA_PROCESSED_DIR)/vulnerable-pop.tif
+VULNERABLE_POP_ALIGNED_TIF := $(DATA_PROCESSED_DIR)/vulnerable-pop-aligned.tif
 ### code
 MAKE_VULNERABLE_POP_PY := $(CODE_DIR)/make_vulnerable_pop.py
 
@@ -155,18 +156,52 @@ $(STATPOP_DIR)/%.csv: $(STATPOP_DIR)/%.zip
 	mv $(STATPOP_DIR)/STATPOP2019.csv $(STATPOP_CSV)
 	touch $@
 $(VULNERABLE_POP_TIF): $(STATPOP_CSV) $(AGGLOM_EXTENT_SHP) \
-	$(CANDIDATE_PIXELS_TIF) $(MAKE_VULNERABLE_POP_PY)
-	python $(MAKE_VULNERABLE_POP_PY) $(STATPOP_CSV) $(AGGLOM_EXTENT_SHP) \
-		$(CANDIDATE_PIXELS_TIF) $@
-vulnerable_pop: $(VULNERABLE_POP_TIF)
+	$(MAKE_VULNERABLE_POP_PY) | $(DATA_PROCESSED_DIR)
+	python $(MAKE_VULNERABLE_POP_PY) $(STATPOP_CSV) $(AGGLOM_EXTENT_SHP) $@
+$(VULNERABLE_POP_ALIGNED_TIF): $(VULNERABLE_POP_TIF) $(RECLASSIF_LULC_TIF)
+	rio warp $< $@ --like $(RECLASSIF_LULC_TIF) --resampling bilinear
+vulnerable_pop: $(VULNERABLE_POP_TIF) $(VULNERABLE_POP_ALIGNED_TIF)
 
 # Heat mitigation
-HEAT_MITIGATION_URI = https://github.com/charlottegiseleweil/ES-lausanne/raw/gh-pages/static/media/heat-mitigation-0.5-4326.49a82243.tif
-HEAT_MITIGATION_TIF := $(DATA_RAW_DIR)/heat-mitigation.tif
-$(HEAT_MITIGATION_TIF): | $(DATA_RAW_DIR)
-	wget $(HEAT_MITIGATION_URI) -O $@
-heat_mitigation: $(HEAT_MITIGATION_TIF)
+## variables
+CALIBRATED_PARAMS_ZENODO_URI = \
+	https://zenodo.org/record/4316572/files/invest-calibrated-params.json?download=1
+STATION_T_ZENODO_URI = \
+	https://zenodo.org/record/4316572/files/station-t.csv?download=1
+REF_ET_ZENODO_URI = https://zenodo.org/record/4316572/files/ref-et.tif?download=1
+CALIBRATED_PARAMS_JSON := $(DATA_RAW_DIR)/invest-calibrated-params.json
+STATION_T_CSV := $(DATA_RAW_DIR)/station-t.csv
+REF_ET_TIF := $(DATA_RAW_DIR)/ref-et.tif
+NUM_SCENARIO_RUNS = 3
+SCENARIOS_RANDOM_NC := $(DATA_PROCESSED_DIR)/scenarios-random.nc
+SCENARIOS_VULNERABLE_NC := $(DATA_PROCESSED_DIR)/scenarios-vulnerable.nc
+### code
+MAKE_SCENARIO_DS_PY := $(CODE_DIR)/make_scenario_ds.py
 
+## rules
+$(CALIBRATED_PARAMS_JSON): | $(DATA_RAW_DIR)
+	wget $(CALIBRATED_PARAMS_ZENODO_URI) -O $@
+$(STATION_T_CSV): | $(DATA_RAW_DIR)
+	wget $(STATION_T_ZENODO_URI) -O $@
+$(REF_ET_TIF): | $(DATA_RAW_DIR)
+	wget $(REF_ET_ZENODO_URI) -O $@
+$(SCENARIOS_RANDOM_NC): $(RECLASSIF_LULC_TIF) $(RECLASSIF_TABLE_CSV) \
+	$(REF_ET_TIF) $(STATION_T_CSV) $(CALIBRATED_PARAMS_JSON) \
+	$(VULNERABLE_POP_TIF) $(MAKE_SCENARIO_DS_PY) | $(DATA_PROCESSED_DIR)
+	python $(MAKE_SCENARIO_DS_PY) $(RECLASSIF_LULC_TIF) \
+		$(RECLASSIF_TABLE_CSV) $(REF_ET_TIF) $(STATION_T_CSV) \
+		$(CALIBRATED_PARAMS_JSON) --change-num-min 50000 --num-scenario-runs \
+		$(NUM_SCENARIO_RUNS) $@
+$(SCENARIOS_VULNERABLE_NC): $(RECLASSIF_LULC_TIF) $(RECLASSIF_TABLE_CSV) \
+	$(REF_ET_TIF) $(STATION_T_CSV) $(CALIBRATED_PARAMS_JSON) \
+	$(VULNERABLE_POP_ALIGNED_TIF) $(MAKE_SCENARIO_DS_PY) \
+	| $(DATA_PROCESSED_DIR)
+	python $(MAKE_SCENARIO_DS_PY) $(RECLASSIF_LULC_TIF) \
+		$(RECLASSIF_TABLE_CSV) $(REF_ET_TIF) $(STATION_T_CSV) \
+		$(CALIBRATED_PARAMS_JSON) --vulnerable-pop-filepath \
+		$(VULNERABLE_POP_ALIGNED_TIF) $@
+scenarios_random: $(SCENARIOS_RANDOM_NC)
+scenarios_vulnerable: $(SCENARIOS_VULNERABLE_NC)
 
 # One pager
 ## variables

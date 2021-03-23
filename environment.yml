@@ -7,6 +7,8 @@ dependencies:
     - -e .
     - git+git://github.com/martibosch/swiss-uhi-utils.git@reclassify
     - git+git://github.com/woodcrafty/PyETo.git@0b7ac9f149f4c89c5b5759a875010c521aa07f0f
+    - git+git://github.com/martibosch/lausanne-greening-scenarios@f732d3e7583b304cc10ae2b670507b8074d51077
+    - invest-ucm-calibration
   - setuptools
   - wheel
   - click
@@ -17,12 +19,16 @@ dependencies:
   - python=3
   - boto3  
   - ipykernel
+  - contextily
   - descartes
+  - gdal<3
   - matplotlib
   - pandoc
   - rasterio
+  - rioxarray
   - salem
   - shapely
   - scikit-image
   - swisslandstats-geopy
+  - xarray
   - wget
