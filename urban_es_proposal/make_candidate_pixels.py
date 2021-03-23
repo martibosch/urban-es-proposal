@@ -13,7 +13,7 @@ ORIG_LULC_CODES = [
     2,  # sidewalk
     3,  # traffic island
     7,  # other impervious
-    # 11,  # garden
+    11,  # garden
 ]
 
 
