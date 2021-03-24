@@ -1,6 +1,6 @@
 .PHONY: create_environment register_ipykernel agglom_lulc reclassify \
-	candidate_pixels vulnerable_pop heat_mitigation one_pager_docx \
-	one_pager_pdf roadmap_docx roadmap_pdf
+	candidate_pixels vulnerable_pop scenarios_random scenarios_vulnerable \
+	figure one_pager_docx one_pager_pdf roadmap_docx roadmap_pdf
 
 #################################################################################
 # GLOBALS                                                                       #
@@ -19,6 +19,7 @@ CODE_DIR = urban_es_proposal
 NOTEBOOKS_DIR = notebooks
 
 REPORTS_DIR = reports
+FIGURES_DIR = reports/figures
 
 ## rules
 define MAKE_DATA_SUB_DIR
@@ -30,6 +31,10 @@ $(DATA_DIR):
 $(foreach DATA_SUB_DIR, \
 	$(DATA_RAW_DIR) $(DATA_INTERIM_DIR) $(DATA_PROCESSED_DIR), \
 	$(eval $(MAKE_DATA_SUB_DIR)))
+$(REPORTS_DIR):
+	mkdir $@
+$(FIGURES_DIR): | $(REPORTS_DIR)
+	mkdir $@
 
 ## Set up python interpreter environment
 create_environment:
@@ -190,7 +195,7 @@ $(SCENARIOS_RANDOM_NC): $(RECLASSIF_LULC_TIF) $(RECLASSIF_TABLE_CSV) \
 	$(VULNERABLE_POP_TIF) $(MAKE_SCENARIO_DS_PY) | $(DATA_PROCESSED_DIR)
 	python $(MAKE_SCENARIO_DS_PY) $(RECLASSIF_LULC_TIF) \
 		$(RECLASSIF_TABLE_CSV) $(REF_ET_TIF) $(STATION_T_CSV) \
-		$(CALIBRATED_PARAMS_JSON) --change-num-min 50000 --num-scenario-runs \
+		$(CALIBRATED_PARAMS_JSON) --num-scenario-runs \
 		$(NUM_SCENARIO_RUNS) $@
 $(SCENARIOS_VULNERABLE_NC): $(RECLASSIF_LULC_TIF) $(RECLASSIF_TABLE_CSV) \
 	$(REF_ET_TIF) $(STATION_T_CSV) $(CALIBRATED_PARAMS_JSON) \
@@ -202,6 +207,18 @@ $(SCENARIOS_VULNERABLE_NC): $(RECLASSIF_LULC_TIF) $(RECLASSIF_TABLE_CSV) \
 		$(VULNERABLE_POP_ALIGNED_TIF) $@
 scenarios_random: $(SCENARIOS_RANDOM_NC)
 scenarios_vulnerable: $(SCENARIOS_VULNERABLE_NC)
+
+# Figures
+## variables
+FIGURE_PNG := $(FIGURES_DIR)/figure.png
+### code
+FIGURE_IPYNB:= $(NOTEBOOKS_DIR)/figure.ipynb
+## rules
+$(FIGURE_PNG): $(SCENARIOS_RANDOM_NC) $(SCENARIOS_VULNERABLE_NC) \
+	| $(FIGURES_DIR)
+	jupyter nbconvert --ExecutePreprocessor.timeout=600 --to notebook \
+		--execute $(FIGURE_IPYNB)
+figure: $(FIGURE_PNG)
 
 # One pager
 ## variables
