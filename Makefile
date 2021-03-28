@@ -232,8 +232,9 @@ ONE_PAGER_PDF := $(REPORTS_DIR)/one-pager.pdf
 $(ONE_PAGER_TEMPLATE_TEX): | $(REPORTS_DIR)
 	wget $(ONE_PAGER_TEMPLATE_URI) -O $@
 define MAKE_ONE_PAGER
-$(ONE_PAGER_EXT):  $(ONE_PAGER_MD) | $(ONE_PAGER_TEMPLATE_TEX)
-	pandoc $$< -o $$@ -f markdown --template $(ONE_PAGER_TEMPLATE_TEX)
+$(ONE_PAGER_EXT):  $(ONE_PAGER_MD) $(FIGURE_PNG) | $(ONE_PAGER_TEMPLATE_TEX)
+	pandoc $$< -o $$@ -f markdown --template $(ONE_PAGER_TEMPLATE_TEX) \
+		-V disable-header-and-footer=true
 endef
 $(foreach ONE_PAGER_EXT, $(ONE_PAGER_DOCX) $(ONE_PAGER_PDF), \
 	$(eval $(MAKE_ONE_PAGER)))
@@ -249,7 +250,7 @@ ROADMAP_PDF := $(REPORTS_DIR)/roadmap.pdf
 ## rules
 define MAKE_ROADMAP
 $(ROADMAP_EXT):  $(ROADMAP_MD) | $(REPORTS_DIR)
-	pandoc $$< -o $$@ -f markdown
+	pandoc $$< -o $$@ -f markdown 
 endef
 $(foreach ROADMAP_EXT, $(ROADMAP_DOCX) $(ROADMAP_PDF), $(eval $(MAKE_ROADMAP)))
 roadmap_docx: $(ROADMAP_DOCX)
