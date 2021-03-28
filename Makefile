@@ -222,15 +222,12 @@ figure: $(FIGURE_PNG)
 
 # One pager
 ## variables
-ONE_PAGER_TEMPLATE_URI = https://raw.githubusercontent.com/Wandmalfarbe/pandoc-latex-template/v2.0.0/eisvogel.tex
 ONE_PAGER_TEMPLATE_TEX := $(REPORTS_DIR)/eisvogel.tex
 ONE_PAGER_MD := $(REPORTS_DIR)/one-pager.md
 ONE_PAGER_DOCX := $(REPORTS_DIR)/one-pager.docx
 ONE_PAGER_PDF := $(REPORTS_DIR)/one-pager.pdf
 
 ## rules
-$(ONE_PAGER_TEMPLATE_TEX): | $(REPORTS_DIR)
-	wget $(ONE_PAGER_TEMPLATE_URI) -O $@
 define MAKE_ONE_PAGER
 $(ONE_PAGER_EXT):  $(ONE_PAGER_MD) $(FIGURE_PNG) | $(ONE_PAGER_TEMPLATE_TEX)
 	pandoc $$< -o $$@ -f markdown --template $(ONE_PAGER_TEMPLATE_TEX) \
